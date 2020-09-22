@@ -26,6 +26,7 @@ jobs:
                     ln -s "$(pwd)" "/plugins/${PLUGIN_NAME}"
                     start-mysql
                     pack-plugin "${PLUGIN_NAME}"
+                    plugin-uploader ext:validate "$(realpath "${PLUGIN_NAME}.zip")"
 
             -   name: Create artifact for plugin ZIP
                 uses: actions/upload-artifact@v1
@@ -33,27 +34,8 @@ jobs:
                     path: ${{ env.PLUGIN_NAME }}.zip
                     name: ${{ env.PLUGIN_NAME }}.zip
 
-    validate-plugin:
-        if: startsWith(github.ref, 'refs/tags/') != true
-        needs: build-plugin
-        runs-on: ubuntu-latest
-        steps:
-            -   name: Download prebuild plugin zip file
-                uses: actions/download-artifact@v2
-                with:
-                    name: ${{ env.PLUGIN_NAME }}.zip
-
-            -   name: Validate Zip
-                run: |
-                    wget 'https://github.com/FriendsOfShopware/FroshPluginUploader/releases/download/${{ env.PLUGIN_UPLOADER_VERSION }}/frosh-plugin-upload.phar' -O frosh-plugin-upload.phar
-                    php frosh-plugin-upload.phar plugin:validate $(pwd)/${PLUGIN_NAME}.zip
-
-                    if [ "${{ secrets.ACCOUNT_USER }}" != "" ] && [ "${{ secrets.ACCOUNT_PASSWORD }}" != "" ]; then
-                        php frosh-plugin-upload.phar ext:validate $(pwd)/${PLUGIN_NAME}.zip
-                    fi
-
     StoreUpdate:
-        needs: [build-plugin, validate-plugin]
+        needs: build-plugin
         if: startsWith(github.ref, 'refs/tags/') != true
         runs-on: ubuntu-latest
         steps:
@@ -72,7 +54,7 @@ jobs:
                     fi
 
     StoreRelease:
-        needs: [build-plugin, validate-plugin]
+        needs: build-plugin
         if: startsWith(github.ref, 'refs/tags/')
         runs-on: ubuntu-latest
         steps:
