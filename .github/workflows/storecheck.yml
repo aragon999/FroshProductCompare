@@ -3,6 +3,7 @@ on:
     push:
         branches:
             - master
+            - feature/build-plugin-in-ghactions
         tags:
             - '*'
 
